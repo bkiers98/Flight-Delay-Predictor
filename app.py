@@ -7,6 +7,7 @@ The full version is saved in git at commit f94b42d. To get it back:
 """
 import pandas as pd
 import streamlit as st
+from packages.plot_data import *
 
 DATA = 'delays_by_airport_month.parquet'
 
@@ -27,3 +28,7 @@ st.write(f'{len(df):,} rows · {df.airport.nunique()} airports · '
          f'{df.carrier.nunique()} carriers')
 
 st.dataframe(df.head(50), use_container_width=True)
+
+st.caption('General performance across airlines')
+fig1 = airline_delays()
+st.pyplot(fig1)
