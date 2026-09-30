@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+scratch.ipynb
+
+# Streamlit secrets (never commit these)
+.streamlit/secrets.toml
+
+# Raw BTS download — regenerate the parquet with prep_data.py instead
+Airline_Delay_Cause.csv
+ot_delaycause*_DL*
