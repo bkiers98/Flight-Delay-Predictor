@@ -32,3 +32,9 @@ st.dataframe(df.head(50), use_container_width=True)
 st.caption('General performance across airlines')
 fig1 = airline_delays()
 st.pyplot(fig1)
+
+
+
+st.caption('Delay rate across airlines')
+fig2 = delay_rate()
+st.pyplot(fig2)
