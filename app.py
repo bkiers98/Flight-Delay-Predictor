@@ -6,8 +6,10 @@ US DOT arrival data.
 import pandas as pd
 import streamlit as st
 
+
 from carriers import MONTHS
 from packages.plot_data import *
+#from packages.plot_data import airline_delays, delay_rate, plot_delay_rates
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices,
                            filter_flights, month_number, rank, summarize)
 
@@ -103,6 +105,14 @@ else:
 # filters above.
 st.subheader('Across all airports')
 
+st.subheader(f"Airline Delay Rates at {labels[airport]}")
+
+fig = plot_delay_rates(summary)
+
+
+
+st.plotly_chart(fig, use_container_width=True)
+
 st.caption('General performance across airlines')
 fig1 = yearly_airline_delays()
 st.pyplot(fig1)
@@ -110,3 +120,5 @@ st.pyplot(fig1)
 st.caption('Delay rate across airlines')
 fig2 = delay_rate()
 st.pyplot(fig2)
+
+

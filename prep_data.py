@@ -13,7 +13,7 @@ def build(path):
     df = prepare(pd.read_csv(path))
 
     keys = ['airport', 'airport_name', 'carrier', 'carrier_label',
-            'carrier_kind', 'month']
+            'carrier_kind', 'year', 'month']
     agg = (df.groupby(keys, as_index=False)
              .agg(flights=('arr_flights', 'sum'),
                   del15=('arr_del15', 'sum'),

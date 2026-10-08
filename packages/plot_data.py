@@ -2,10 +2,14 @@ import pandas as pd
 import seaborn as sns
 import plotly.express as px
 import matplotlib.pyplot as plt
+import plotly.express as px
+
 
 DATA = 'delays_by_airport_month.parquet'
 
 df_delays = pd.read_parquet(DATA)
+
+
 
 def airline_delays():
   sns.set_theme()
@@ -51,12 +55,28 @@ def delay_rate():
     return fig2
 
 
-def yearly_airline_delays(carrier='AA'):
-  df_carrier = df_delays[df_delays['carrier'] == carrier].copy()
-  print(df_carrier.info())
-  df_carrier['date'] = pd.to_datetime(df_carrier[['year', 'month']].assign(day=1))
-  df_carrier_sum = df_carrier.groupby('date')[['del15']].sum().reset_index()
 
-  fig2 = px.line(df_carrier_sum, x='date', y='del15')
 
-  return fig2
+
+def plot_delay_rates(summary):
+    fig = px.bar(
+        summary,
+        x='delay_rate',
+        y='carrier_label',
+        orientation='h',
+        title='Delay Rate by Airline',
+        labels={
+            'carrier_label': 'Airline',
+            'delay_rate': 'Delay Rate'
+        }
+    )
+
+    fig.update_xaxes(tickformat='.0%')
+
+    fig.update_layout(
+        height=650,
+        yaxis={'autorange': 'reversed'},
+        margin=dict(l=300)
+    )
+
+    return fig
