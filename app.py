@@ -44,15 +44,22 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-col1, col2, col3 = st.columns([2, 1, 1])
+col1, col2 = st.columns([2, 1])
 with col1:
-    airport = st.selectbox('Airport', options=codes,
+    flex = st.container(horizontal=True)
+    airport = flex.selectbox('Airport', options=codes,
                            format_func=lambda a: f'{a} — {labels[a]}',
                            index=codes.index('IND') if 'IND' in codes else 0)
-with col2:
-    month = st.selectbox('Month of travel', options=['Any'] + MONTHS)
-with col3:
-    sort_by = st.selectbox('Rank by', list(METRICS))
+    month = flex.selectbox('Month of travel', options=['Any'] + MONTHS, width=130)
+    sort_by = flex.selectbox('Rank by', list(METRICS), width=170)
+# with col1:
+#     airport = st.selectbox('Airport', options=codes,
+#                            format_func=lambda a: f'{a} — {labels[a]}',
+#                            index=codes.index('IND') if 'IND' in codes else 0)
+# with col2:
+#     month = st.selectbox('Month of travel', options=['Any'] + MONTHS)
+# with col3:
+#     sort_by = st.selectbox('Rank by', list(METRICS))
 
 show_regional = st.checkbox(
     'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
