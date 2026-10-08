@@ -30,7 +30,7 @@ st.write(f'{len(df):,} rows · {df.airport.nunique()} airports · '
 st.dataframe(df.head(50), use_container_width=True)
 
 st.caption('General performance across airlines')
-fig1 = airline_delays()
+fig1 = yearly_airline_delays()
 st.pyplot(fig1)
 
 
