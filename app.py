@@ -46,12 +46,18 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-col1, col2 = st.columns([2, 1])
-with col1:
+cols = st.columns([1, 2])
+
+top_left_cell = cols[0].container(
+    border=True, height='stretch'
+)
+
+with top_left_cell:
     flex = st.container(horizontal=True)
     airport = flex.selectbox('Airport', options=codes,
                            format_func=lambda a: f'{a} — {labels[a]}',
-                           index=codes.index('IND') if 'IND' in codes else 0)
+                           index=codes.index('IND') if 'IND' in codes else 0, 
+                           width=500)
     month = flex.selectbox('Month of travel', options=['Any'] + MONTHS, width=130)
     sort_by = flex.selectbox('Rank by', list(METRICS), width=170)
 # with col1:
@@ -63,17 +69,27 @@ with col1:
 # with col3:
 #     sort_by = st.selectbox('Rank by', list(METRICS))
 
-show_regional = st.checkbox(
-    'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
-    value=True,
-    help='These airlines operate many flights sold under mainline brands. '
-         'A ticket that says Delta may be flown by Endeavor.')
+    show_regional = st.checkbox(
+        'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
+        value=True,
+        help='These airlines operate many flights sold under mainline brands. '
+            'A ticket that says Delta may be flown by Endeavor.')
 
 # ---- ranking ---------------------------------------------------------------
 sub = filter_flights(df, airport, month_number(month), show_regional)
 # One month holds roughly a twelfth of the flights, so the floor drops with it.
 floor = MIN_FLIGHTS if month == 'Any' else MIN_FLIGHTS // 10
 summary = rank(summarize(sub, floor), sort_by)
+
+mid_left_cell_1 = cols[0].container(
+    border=True, height='stretch', horizontal_alignment='left'
+)
+
+with mid_left_cell_1:
+    st.subheader(f"Airline Delay Rates at {labels[airport]}")
+
+    fig = plot_delay_rates(summary)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.subheader(labels[airport] + ('' if month == 'Any' else f' in {month}'))
 
@@ -105,20 +121,15 @@ else:
 # filters above.
 st.subheader('Across all airports')
 
-st.subheader(f"Airline Delay Rates at {labels[airport]}")
-
-fig = plot_delay_rates(summary)
 
 
 
-st.plotly_chart(fig, use_container_width=True)
+
+
 
 st.caption('General performance across airlines')
-fig1 = yearly_airline_delays()
-st.pyplot(fig1)
+fig1 = yearly_airline_delays(summary)
+st.plotly_chart(fig1)
 
-st.caption('Delay rate across airlines')
-fig2 = delay_rate()
-st.pyplot(fig2)
 
 

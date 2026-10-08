@@ -11,48 +11,48 @@ df_delays = pd.read_parquet(DATA)
 
 
 
-def airline_delays():
-  sns.set_theme()
+# def airline_delays():
+#   sns.set_theme()
 
-  df_airport_airlines = df_delays.groupby(['airport_name', 'carrier_label']) \
-                                  [['flights', \
-                                    'del15', \
-                                      'cancelled', \
-                                      'diverted', \
-                                      'delay_min']] \
-                                      .sum()
-  df_airport_airlines.reset_index(inplace=True)
-  fig1, ax = plt.subplots()
-  sns.scatterplot(data=df_airport_airlines, \
-                                x='flights', \
-                                  y='del15', \
-                                  hue='delay_min', \
-                                  ax=ax)
+#   df_airport_airlines = df_delays.groupby(['airport_name', 'carrier_label']) \
+#                                   [['flights', \
+#                                     'del15', \
+#                                       'cancelled', \
+#                                       'diverted', \
+#                                       'delay_min']] \
+#                                       .sum()
+#   df_airport_airlines.reset_index(inplace=True)
+#   fig1, ax = plt.subplots()
+#   sns.scatterplot(data=df_airport_airlines, \
+#                                 x='flights', \
+#                                   y='del15', \
+#                                   hue='delay_min', \
+#                                   ax=ax)
 
-  return fig1
+#   return fig1
 
-def delay_rate():
-    df_rate = (
-        df_delays
-        .groupby(['airport_name', 'carrier_label'])[['flights', 'del15']]
-        .sum()
-    )
+# def delay_rate():
+#     df_rate = (
+#         df_delays
+#         .groupby(['airport_name', 'carrier_label'])[['flights', 'del15']]
+#         .sum()
+#     )
 
-    df_rate['delay_rate'] = (df_rate['del15'] / df_rate['flights']) * 100
+#     df_rate['delay_rate'] = (df_rate['del15'] / df_rate['flights']) * 100
 
-    df_rate.reset_index(inplace=True)
+#     df_rate.reset_index(inplace=True)
 
-    fig2, ax = plt.subplots()
+#     fig2, ax = plt.subplots()
 
-    sns.scatterplot(
-        data=df_rate,
-        x='flights',
-        y='delay_rate',
-        hue='delay_rate',
-        ax=ax
-    )
+#     sns.scatterplot(
+#         data=df_rate,
+#         x='flights',
+#         y='delay_rate',
+#         hue='delay_rate',
+#         ax=ax
+#     )
 
-    return fig2
+#     return fig2
 
 
 
@@ -80,3 +80,20 @@ def plot_delay_rates(summary):
     )
 
     return fig
+
+def yearly_airline_delays(summary):
+  df_dated = df_delays.copy()
+  df_dated['date'] = pd.to_datetime(df_dated[['year', 'month']] \
+                                    .assign(day=1))
+
+  df_date_sum = df_dated.groupby(['date', 'carrier_label'])[['del15']] \
+                                    .sum() \
+                                    .reset_index()
+
+  carrier_list = [carrier for carrier in summary['carrier_label']]
+
+  mask = (df_date_sum['carrier_label'].isin(carrier_list))
+  fig = px.line(df_date_sum[mask], x='date', y='del15', color='carrier_label')
+
+  return fig
+  
