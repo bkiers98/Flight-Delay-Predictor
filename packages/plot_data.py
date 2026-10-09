@@ -90,10 +90,18 @@ def yearly_airline_delays(summary):
                                     .sum() \
                                     .reset_index()
 
-  carrier_list = [carrier for carrier in summary['carrier_label']]
+  carrier_list = [carrier for index, carrier in enumerate(
+                      summary['carrier_label']
+                      ) if index < 5]
 
   mask = (df_date_sum['carrier_label'].isin(carrier_list))
-  fig = px.line(df_date_sum[mask], x='date', y='del15', color='carrier_label')
+  fig = px.line(df_date_sum[mask], x='date', y='del15', color='carrier_label',
+                title='Airline Performance over 5 Years',
+                labels={
+                   'date':'Date',
+                   'del15':'Total delays',
+                   'carrier_label':'Carrier'
+                })
 
   return fig
   
