@@ -76,7 +76,7 @@ def plot_delay_rates(summary):
     fig.update_layout(
         height=650,
         yaxis={'autorange': 'reversed'},
-        margin=dict(l=300)
+        yaxis_tickangle=-45
     )
 
     return fig
@@ -159,6 +159,12 @@ def yearly_airline_delays(summary):
                    'del15':'Total delays',
                    'carrier_label':'Carrier'
                 })
+  fig.update_layout(legend=dict(
+      yanchor='top',
+      y=1.1,
+      xanchor='left',
+      x=0.01
+  ))
 
   return fig
   

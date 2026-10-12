@@ -9,12 +9,7 @@ import streamlit as st
 
 from carriers import MONTHS
 
-from packages.plot_data import (
-    airline_delays,
-    delay_rate,
-    plot_delay_rates,
-    plot_delay_causes,
-)
+from packages.plot_data import *
 
 from packages.rank import (
     METRICS,
@@ -132,37 +127,42 @@ else:
 # ---- fleet-wide charts -----------------------------------------------------
 # These read the parquet directly, so they cover all airports regardless of the
 # filters above.
-st.subheader("Why are flights delayed?")
 
+top_right_cell = cols[1].container(
+    border=True, height='stretch'
+)
 
+with top_right_cell:
+    fig1 = yearly_airline_delays(summary)
+    st.plotly_chart(fig1)
 
+mid_right_cell_1 = cols[1].container(
+    border=True, height='stretch'
+)
 
+with mid_right_cell_1:
+    st.subheader("Why are flights delayed?")
+    st.caption('General performance across airlines')
 
+    if month == "Any":
+        cause_data = filter_flights(
+            df,
+            airport,
+            month=None
+        )
+    else:
+        cause_data = filter_flights(
+            df,
+            airport,
+            month_number(month),
+            include_regional=show_regional
+        )
 
+    cause_summary = summarize(cause_data)
 
-st.caption('General performance across airlines')
-fig1 = yearly_airline_delays(summary)
-st.plotly_chart(fig1)
-
-if month == "Any":
-    cause_data = filter_flights(
-        df,
-        airport,
-        month=None
-    )
-else:
-    cause_data = filter_flights(
-        df,
-        airport,
-        month_number(month),
-        include_regional=show_regional
-    )
-
-cause_summary = summarize(cause_data)
-
-if not cause_summary.empty:
-    cause_shares_df = cause_shares(cause_summary)
-    fig_causes = plot_delay_causes(cause_shares_df)
-    st.plotly_chart(fig_causes, width="stretch")
-else:
-    st.info("No delay-cause data available for this selection.")
+    if not cause_summary.empty:
+        cause_shares_df = cause_shares(cause_summary)
+        fig_causes = plot_delay_causes(cause_shares_df)
+        st.plotly_chart(fig_causes, width="stretch")
+    else:
+        st.info("No delay-cause data available for this selection.")
