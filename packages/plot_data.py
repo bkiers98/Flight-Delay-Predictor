@@ -81,6 +81,63 @@ def plot_delay_rates(summary):
 
     return fig
 
+
+
+def plot_delay_causes(shares):
+    cause_data = (
+        shares
+        .mean()
+        .reset_index()
+    )
+
+    cause_data.columns = ["cause", "share"]
+
+    fig = px.bar(
+        cause_data,
+        x="share",
+        y="cause",
+        orientation="h",
+        title="Why Are Flights Delayed?",
+        labels={
+            "share": "Share of Delays",
+            "cause": "Delay Cause"
+        },
+    )
+
+    fig.update_xaxes(tickformat=".0%")
+    fig.update_layout(
+        yaxis={"categoryorder": "total ascending"},
+        height=450,
+    )
+
+    return fig
+
+
+def plot_delay_causes(shares):
+    cause_data = shares.mean().reset_index()
+    cause_data.columns = ["cause", "share"]
+
+    fig = px.bar(
+        cause_data,
+        x="share",
+        y="cause",
+        orientation="h",
+        title="Why Are Flights Delayed?",
+        labels={
+            "share": "Share of Delays",
+            "cause": "Delay Cause"
+        }
+    )
+
+    fig.update_xaxes(tickformat=".0%")
+
+    fig.update_layout(
+        yaxis={"categoryorder": "total ascending"},
+        height=450
+    )
+
+    return fig
+
 def yearly_airline_delays(summary):
   df_dated = df_delays.copy()
   df_dated['date'] = pd.to_datetime(df_dated[['year', 'month']] \
