@@ -1,9 +1,4 @@
 """Precompute the aggregates the app needs.
-
-Run this once whenever new BTS data is downloaded:
-
-    python prep_data.py Airline_Delay_Cause.csv
-
 It writes delays_by_airport_month.parquet, which the app loads instead of the
 raw 110k-row file. Keeps Streamlit fast and the repo small.
 """
@@ -18,7 +13,7 @@ def build(path):
     df = prepare(pd.read_csv(path))
 
     keys = ['airport', 'airport_name', 'carrier', 'carrier_label',
-            'carrier_kind', 'month']
+            'carrier_kind', 'year', 'month']
     agg = (df.groupby(keys, as_index=False)
              .agg(flights=('arr_flights', 'sum'),
                   del15=('arr_del15', 'sum'),
