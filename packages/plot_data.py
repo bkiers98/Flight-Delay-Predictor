@@ -77,6 +77,7 @@ def plot_delay_rates(summary):
         height=650,
         yaxis={'autorange': 'reversed'},
         yaxis_tickangle=-45
+
     )
 
     return fig

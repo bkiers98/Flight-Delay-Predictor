@@ -54,7 +54,7 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-cols = st.columns([1, 2])
+cols = st.columns([2, 3])
 
 top_left_cell = cols[0].container(
     border=True, height='stretch'
@@ -68,15 +68,6 @@ with top_left_cell:
                            width=500)
     month = flex.selectbox('Month of travel', options=['Any'] + MONTHS, width=130)
     sort_by = flex.selectbox('Rank by', list(METRICS), width=170)
-# with col1:
-#     airport = st.selectbox('Airport', options=codes,
-#                            format_func=lambda a: f'{a} — {labels[a]}',
-#                            index=codes.index('IND') if 'IND' in codes else 0)
-# with col2:
-#     month = st.selectbox('Month of travel', options=['Any'] + MONTHS)
-# with col3:
-#     sort_by = st.selectbox('Rank by', list(METRICS))
-
     show_regional = st.checkbox(
         'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
         value=True,
@@ -88,6 +79,13 @@ sub = filter_flights(df, airport, month_number(month), show_regional)
 # One month holds roughly a twelfth of the flights, so the floor drops with it.
 floor = MIN_FLIGHTS if month == 'Any' else MIN_FLIGHTS // 10
 summary = rank(summarize(sub, floor), sort_by)
+
+with top_left_cell:
+    if summary.empty:
+        st.warning('Not enough flights at this airport to compare carriers reliably. '
+                'Try a larger airport, or set the month to Any.')
+    else:
+        st.subheader(best_line(summary.iloc[0], sort_by).split(' (')[0])
 
 mid_left_cell_1 = cols[0].container(
     border=True, height='stretch', horizontal_alignment='left'
@@ -124,10 +122,6 @@ else:
             'top_cause': st.column_config.TextColumn('Most common cause'),
         })
 
-# ---- fleet-wide charts -----------------------------------------------------
-# These read the parquet directly, so they cover all airports regardless of the
-# filters above.
-
 top_right_cell = cols[1].container(
     border=True, height='stretch'
 )
@@ -139,6 +133,10 @@ with top_right_cell:
 mid_right_cell_1 = cols[1].container(
     border=True, height='stretch'
 )
+
+# ---- fleet-wide charts -----------------------------------------------------
+# These read the parquet directly, so they cover all airports regardless of the
+# filters above.
 
 with mid_right_cell_1:
     st.subheader("Why are flights delayed?")
