@@ -9,12 +9,7 @@ import streamlit as st
 
 from carriers import MONTHS
 
-from packages.plot_data import (
-    airline_delays,
-    delay_rate,
-    plot_delay_rates,
-    plot_delay_causes,
-)
+from packages.plot_data import *
 
 from packages.rank import (
     METRICS,
@@ -59,27 +54,48 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-col1, col2, col3 = st.columns([2, 1, 1])
-with col1:
-    airport = st.selectbox('Airport', options=codes,
-                           format_func=lambda a: f'{a} — {labels[a]}',
-                           index=codes.index('IND') if 'IND' in codes else 0)
-with col2:
-    month = st.selectbox('Month of travel', options=['Any'] + MONTHS)
-with col3:
-    sort_by = st.selectbox('Rank by', list(METRICS))
+cols = st.columns([2, 3])
 
-show_regional = st.checkbox(
-    'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
-    value=True,
-    help='These airlines operate many flights sold under mainline brands. '
-         'A ticket that says Delta may be flown by Endeavor.')
+top_left_cell = cols[0].container(
+    border=True, height='stretch'
+)
+
+with top_left_cell:
+    flex = st.container(horizontal=True)
+    airport = flex.selectbox('Airport', options=codes,
+                           format_func=lambda a: f'{a} — {labels[a]}',
+                           index=codes.index('IND') if 'IND' in codes else 0, 
+                           width=500)
+    month = flex.selectbox('Month of travel', options=['Any'] + MONTHS, width=130)
+    sort_by = flex.selectbox('Rank by', list(METRICS), width=170)
+    show_regional = st.checkbox(
+        'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
+        value=True,
+        help='These airlines operate many flights sold under mainline brands. '
+            'A ticket that says Delta may be flown by Endeavor.')
 
 # ---- ranking ---------------------------------------------------------------
 sub = filter_flights(df, airport, month_number(month), show_regional)
 # One month holds roughly a twelfth of the flights, so the floor drops with it.
 floor = MIN_FLIGHTS if month == 'Any' else MIN_FLIGHTS // 10
 summary = rank(summarize(sub, floor), sort_by)
+
+with top_left_cell:
+    if summary.empty:
+        st.warning('Not enough flights at this airport to compare carriers reliably. '
+                'Try a larger airport, or set the month to Any.')
+    else:
+        st.subheader(best_line(summary.iloc[0], sort_by).split(' (')[0])
+
+mid_left_cell_1 = cols[0].container(
+    border=True, height='stretch', horizontal_alignment='left'
+)
+
+with mid_left_cell_1:
+    st.subheader(f"Airline Delay Rates at {labels[airport]}")
+
+    fig = plot_delay_rates(summary)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.subheader(labels[airport] + ('' if month == 'Any' else f' in {month}'))
 
@@ -106,30 +122,45 @@ else:
             'top_cause': st.column_config.TextColumn('Most common cause'),
         })
 
+top_right_cell = cols[1].container(
+    border=True, height='stretch'
+)
+
+with top_right_cell:
+    fig1 = yearly_airline_delays(summary)
+    st.plotly_chart(fig1)
+
+mid_right_cell_1 = cols[1].container(
+    border=True, height='stretch'
+)
+
 # ---- fleet-wide charts -----------------------------------------------------
 # These read the parquet directly, so they cover all airports regardless of the
 # filters above.
-st.subheader("Why are flights delayed?")
 
-if month == "Any":
-    cause_data = filter_flights(
-        df,
-        airport,
-        month=None
-    )
-else:
-    cause_data = filter_flights(
-        df,
-        airport,
-        month_number(month),
-        include_regional=show_regional
-    )
+with mid_right_cell_1:
+    st.subheader("Why are flights delayed?")
+    st.caption('General performance across airlines')
 
-cause_summary = summarize(cause_data)
+    if month == "Any":
+        cause_data = filter_flights(
+            df,
+            airport,
+            month=None
+        )
+    else:
+        cause_data = filter_flights(
+            df,
+            airport,
+            month_number(month),
+            include_regional=show_regional
+        )
 
-if not cause_summary.empty:
-    cause_shares_df = cause_shares(cause_summary)
-    fig_causes = plot_delay_causes(cause_shares_df)
-    st.plotly_chart(fig_causes, width="stretch")
-else:
-    st.info("No delay-cause data available for this selection.")
+    cause_summary = summarize(cause_data)
+
+    if not cause_summary.empty:
+        cause_shares_df = cause_shares(cause_summary)
+        fig_causes = plot_delay_causes(cause_shares_df)
+        st.plotly_chart(fig_causes, width="stretch")
+    else:
+        st.info("No delay-cause data available for this selection.")
