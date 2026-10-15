@@ -98,8 +98,10 @@ else:
 # filters above.
 st.subheader('Across all airports')
 
-st.subheader(f"Airline Delay Rates at {labels[airport]}")
-
+st.markdown(
+    f"<h3>Airline Delay Rates at <span style='color: #FF4B4B;'>{labels[airport]}</span></h3>",
+    unsafe_allow_html=True
+)
 fig = plot_delay_rates(summary)
 
 
