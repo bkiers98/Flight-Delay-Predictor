@@ -54,7 +54,7 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-cols = st.columns([2, 3])
+cols = st.columns([3, 2])
 
 top_left_cell = cols[0].container(
     border=True, height='stretch'
@@ -90,12 +90,19 @@ with top_left_cell:
 mid_left_cell_1 = cols[0].container(
     border=True, height='stretch', horizontal_alignment='left'
 )
-
 with mid_left_cell_1:
-    st.subheader(f"Airline Delay Rates at {labels[airport]}")
+    st.markdown(
+        f"<h3>Airline Delay Rates at "
+        f"<span style='color: #FF4B4B;'>{labels[airport]}</span></h3>",
+        unsafe_allow_html=True
+    )
 
     fig = plot_delay_rates(summary)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False}
+    )
 
 st.subheader(labels[airport] + ('' if month == 'Any' else f' in {month}'))
 

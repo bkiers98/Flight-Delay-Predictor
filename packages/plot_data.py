@@ -136,16 +136,19 @@ def plot_delay_rates(summary):
     tickformat='.0%',
     showgrid=True,
     gridcolor='lightgray',
-    zeroline=False
+    zeroline=False,
+    range=[0, summary['delay_rate'].max() * 1.20]
 )
 
     fig.update_layout(
-        height=650,
-        yaxis={'autorange': 'reversed'},
-        yaxis_tickangle=-45
-
-    )
-
+    height=max(500, len(summary) * 42),
+    autosize=True,
+  margin=dict(l=10, r=100, t=55, b=55),
+    showlegend=False,
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
     return fig
 
 
