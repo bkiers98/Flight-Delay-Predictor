@@ -54,7 +54,7 @@ st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026
 # ---- inputs ----------------------------------------------------------------
 codes, labels = airport_choices(df)
 
-cols = st.columns([3, 2])
+cols = st.columns([2, 3])
 
 top_left_cell = cols[0].container(
     border=True, height='stretch'

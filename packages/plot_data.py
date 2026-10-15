@@ -94,6 +94,17 @@ df_delays = pd.read_parquet(DATA)
 def plot_delay_rates(summary):
     summary = summary.copy()
 
+    summary['chart_label'] = summary['carrier_label'].replace({
+    'Alaska Airlines (includes Hawaiian)': 'Alaska Airlines',
+    'SkyWest Airlines (flies as United Express / Delta Connection / American Eagle / Alaska)': 'SkyWest',
+    'Republic Airways (flies as United Express / American Eagle / Delta Connection)': 'Republic Airways',
+    'Envoy Air (flies as American Eagle)': 'Envoy Air',
+    'PSA Airlines (flies as American Eagle)': 'PSA Airlines',
+    'GoJet Airlines (flies as United Express)': 'GoJet',
+'Endeavor Air (flies as Delta Connection)': 'Endeavor Air',
+'Mesa Airlines (flies as United Express)': 'Mesa Airlines'
+})
+
     lowest_rate = summary['delay_rate'].min()
 
     lowest_airline = summary.loc[
@@ -110,11 +121,11 @@ def plot_delay_rates(summary):
     fig = px.bar(
         summary,
         x='delay_rate',
-        y='carrier_label',
+        y='chart_label',
         orientation='h',
         title='Delay Rate by Airline',
         labels={
-            'carrier_label': 'Airline',
+            'chart_label': 'Airline',
             'delay_rate': 'Delay Rate'
         },
         color='color_group',
