@@ -58,28 +58,108 @@ df_delays = pd.read_parquet(DATA)
 
 
 
+# def plot_delay_rates(summary):
+#     #working on the delay rates
+#     lowest_rate = summary['delay_rate'].min()
+#     lowest_airline = summary.loc[
+#     summary['delay_rate'] == lowest_rate,
+#     'carrier_label'
+# ]
+
+
+#     fig = px.bar(
+#         summary,
+#         x='delay_rate',
+#         y='carrier_label',
+#         orientation='h',
+#         title='Delay Rate by Airline',
+#         labels={
+#             'carrier_label': 'Airline',
+#             'delay_rate': 'Delay Rate'
+#         }
+#     )
+
+#     fig.update_xaxes(tickformat='.0%')
+
+#     fig.update_layout(
+#         height=650,
+#         yaxis={'autorange': 'reversed'},
+#         margin=dict(l=300)
+#     )
+
+#     return fig
+
+
+
 def plot_delay_rates(summary):
+    summary = summary.copy()
+
+    summary['chart_label'] = summary['carrier_label'].replace({
+    'Alaska Airlines (includes Hawaiian)': 'Alaska Airlines',
+    'SkyWest Airlines (flies as United Express / Delta Connection / American Eagle / Alaska)': 'SkyWest',
+    'Republic Airways (flies as United Express / American Eagle / Delta Connection)': 'Republic Airways',
+    'Envoy Air (flies as American Eagle)': 'Envoy Air',
+    'PSA Airlines (flies as American Eagle)': 'PSA Airlines',
+    'GoJet Airlines (flies as United Express)': 'GoJet',
+'Endeavor Air (flies as Delta Connection)': 'Endeavor Air',
+'Mesa Airlines (flies as United Express)': 'Mesa Airlines'
+})
+
+    lowest_rate = summary['delay_rate'].min()
+
+    lowest_airline = summary.loc[
+        summary['delay_rate'] == lowest_rate,
+        'carrier_label'
+    ]
+
+    summary['color_group'] = summary['carrier_label'].apply(
+        lambda airline: 'lowest_airline'
+        if airline in lowest_airline.values
+        else 'other'
+    )
+
     fig = px.bar(
         summary,
         x='delay_rate',
-        y='carrier_label',
+        y='chart_label',
         orientation='h',
         title='Delay Rate by Airline',
         labels={
-            'carrier_label': 'Airline',
+            'chart_label': 'Airline',
             'delay_rate': 'Delay Rate'
-        }
+        },
+        color='color_group',
+        color_discrete_map={
+            'lowest_airline': 'green',
+            'other': 'gray'
+        },
+        text='delay_rate'
     )
 
-    fig.update_xaxes(tickformat='.0%')
+    fig.update_traces(
+    texttemplate='%{x:.0%}',
+    textposition='outside',
+    textfont=dict(size=12, color='black', family='Arial Black'),
+    width=0.65
+)
+
+    fig.update_xaxes(
+    tickformat='.0%',
+    showgrid=True,
+    gridcolor='lightgray',
+    zeroline=False,
+    range=[0, summary['delay_rate'].max() * 1.20]
+)
 
     fig.update_layout(
-        height=650,
-        yaxis={'autorange': 'reversed'},
-        yaxis_tickangle=-45
-
-    )
-
+    height=max(500, len(summary) * 42),
+    autosize=True,
+  margin=dict(l=10, r=100, t=55, b=55),
+    showlegend=False,
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
     return fig
 
 
