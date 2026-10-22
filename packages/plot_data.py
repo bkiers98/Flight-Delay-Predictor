@@ -168,4 +168,19 @@ def yearly_airline_delays(summary):
   ))
 
   return fig
+
+
+def month_delay_heatmap(summary):
+    df = df_delays.copy()
+    carrier = summary['carrier_label'][0]
+    
+    mask = (df['carrier_label'] == carrier)
+    df_masked = df[mask]
+    df_masked['weather_ratio'] = df_masked['weather_ct'] / df_masked['del15']
+    fig = px.density_heatmap(df_masked, x='month',
+                             y='year',
+                             z='weather_ratio',
+                             histfunc='avg',
+                             color_continuous_scale='cividis')
+    return fig
   

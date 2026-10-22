@@ -164,3 +164,10 @@ with mid_right_cell_1:
         st.plotly_chart(fig_causes, width="stretch")
     else:
         st.info("No delay-cause data available for this selection.")
+
+mid_left_cell_2 = cols[1].container(
+    border=True, height='stretch'
+)
+
+with mid_left_cell_2:
+    st.plotly_chart(month_delay_heatmap(summary))
