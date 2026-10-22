@@ -1,29 +1,28 @@
 """Flight Delay Predictor.
 
 Compares airline on-time performance at a chosen airport, using five years of
-US DOT arrival data.
+US DOT arrival data. Ranking lives in packages/rank.py, charts in
+packages/plot_data.py, and every colour in packages/theme.py -- this file is
+layout only. Run with:  streamlit run app.py
 """
 import pandas as pd
 import streamlit as st
 
-
 from carriers import MONTHS
+from packages import theme
+from packages.plot_data import (plot_delay_causes, plot_delay_rates,
+                                yearly_airline_delays)
+from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
+                           filter_flights, month_number, rank, summarize)
 
-from packages.plot_data import *
-
-from packages.rank import (
-    METRICS,
-    MIN_FLIGHTS,
-    airport_choices,
-    filter_flights,
-    month_number,
-    rank,
-    summarize,
-    cause_shares,
-)
 DATA = 'delays_by_airport_month.parquet'
 
-st.set_page_config(page_title='Flight Delay Predictor', layout='wide')
+st.set_page_config(page_title='Flight Delay Predictor', layout='wide',
+                   page_icon='🛬')
+
+MODE = theme.current_mode()
+PAL = theme.palette(MODE)
+st.markdown(theme.css(MODE), unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -31,143 +30,138 @@ def load():
     return pd.read_parquet(DATA)
 
 
-def best_line(row, sort_by):
-    """One-line summary of the top carrier, phrased for the metric ranked on."""
-    col = METRICS[sort_by]
-    value = row[col]
+def kpi(label, value, sub='', tag=None, tone='good'):
+    """A stat tile. When the story is one number, the number is the chart."""
+    tag_html = f'<div class="kpi-tag tag-{tone}">{tag}</div>' if tag else ''
+    st.markdown(
+        f'<div class="kpi"><div class="kpi-label">{label}</div>'
+        f'<div class="kpi-value">{value}</div>'
+        f'<div class="kpi-sub">{sub}</div>{tag_html}</div>',
+        unsafe_allow_html=True)
+
+
+def reading(col, value):
+    """Format a metric the way its own units read."""
     if pd.isna(value):
-        return f'Best on **{sort_by.lower()}**: **{row.carrier_label}**'
-    reading = {
-        'delay_rate': f'{value:.0%} of arrivals delayed 15 minutes or more',
-        'avg_delay': f'{value:.0f} min average delay when late',
-        'cancel_rate': f'{value:.1%} of arrivals cancelled',
-    }[col]
-    return f'Best on **{sort_by.lower()}**: **{row.carrier_label}** ({reading})'
+        return '—'
+    return {'delay_rate': f'{value:.1%}',
+            'avg_delay': f'{value:.0f} min',
+            'cancel_rate': f'{value:.2%}'}[col]
 
 
 df = load()
 
-st.title('Flight Delay Predictor')
-st.caption('Historical arrival performance by airline, US DOT data, 2021 to 2026. '
-           'Past performance, not a forecast for any individual flight.')
+st.markdown('# Flight Delay Predictor')
+st.markdown(
+    f'<p class="legend-note">Historical arrival performance by airline, '
+    f'US DOT data {df.year.min()}–{df.year.max()}. '
+    f'Past performance, not a forecast for any individual flight.</p>',
+    unsafe_allow_html=True)
 
-# ---- inputs ----------------------------------------------------------------
+# ---- filters: one row, above everything they drive ------------------------
 codes, labels = airport_choices(df)
-
-cols = st.columns([2, 3])
-
-top_left_cell = cols[0].container(
-    border=True, height='stretch'
-)
-
-with top_left_cell:
-    flex = st.container(horizontal=True)
-    airport = flex.selectbox('Airport', options=codes,
+f1, f2, f3, f4 = st.columns([3, 1.4, 1.4, 2.2])
+with f1:
+    airport = st.selectbox('Airport', options=codes,
                            format_func=lambda a: f'{a} — {labels[a]}',
-                           index=codes.index('IND') if 'IND' in codes else 0, 
-                           width=500)
-    month = flex.selectbox('Month of travel', options=['Any'] + MONTHS, width=130)
-    sort_by = flex.selectbox('Rank by', list(METRICS), width=170)
-    show_regional = st.checkbox(
-        'Include regional carriers (Republic, SkyWest, Endeavor and similar)',
-        value=True,
+                           index=codes.index('IND') if 'IND' in codes else 0)
+with f2:
+    month = st.selectbox('Month', options=['Any'] + MONTHS)
+with f3:
+    sort_by = st.selectbox('Rank by', list(METRICS))
+with f4:
+    st.write('')
+    show_regional = st.toggle(
+        'Include regional carriers', value=True,
         help='These airlines operate many flights sold under mainline brands. '
-            'A ticket that says Delta may be flown by Endeavor.')
+             'A ticket that says Delta may be flown by Endeavor.')
 
-# ---- ranking ---------------------------------------------------------------
+# ---- ranking --------------------------------------------------------------
 sub = filter_flights(df, airport, month_number(month), show_regional)
 # One month holds roughly a twelfth of the flights, so the floor drops with it.
 floor = MIN_FLIGHTS if month == 'Any' else MIN_FLIGHTS // 10
 summary = rank(summarize(sub, floor), sort_by)
 
-with top_left_cell:
-    if summary.empty:
-        st.warning('Not enough flights at this airport to compare carriers reliably. '
-                'Try a larger airport, or set the month to Any.')
-    else:
-        st.subheader(best_line(summary.iloc[0], sort_by).split(' (')[0])
-
-mid_left_cell_1 = cols[0].container(
-    border=True, height='stretch', horizontal_alignment='left'
-)
-
-with mid_left_cell_1:
-    st.subheader(f"Airline Delay Rates at {labels[airport]}")
-
-    fig = plot_delay_rates(summary)
-    st.plotly_chart(fig, use_container_width=True)
-
-st.subheader(labels[airport] + ('' if month == 'Any' else f' in {month}'))
+scope = labels[airport] + ('' if month == 'Any' else f' · {month}')
+col = METRICS[sort_by]
 
 if summary.empty:
-    st.warning('Not enough flights at this airport to compare carriers reliably. '
-               'Try a larger airport, or set the month to Any.')
-else:
-    st.markdown(best_line(summary.iloc[0], sort_by))
-    st.dataframe(
-        summary[['carrier_label', 'carrier_kind', 'flights', 'delay_rate',
-                 'avg_delay', 'cancel_rate', 'top_cause']],
-        hide_index=True,
-        width='stretch',
-        column_config={
-            'carrier_label': st.column_config.TextColumn('Airline', width='large'),
-            'carrier_kind': st.column_config.TextColumn('Type'),
-            'flights': st.column_config.NumberColumn('Arrivals', format='%d'),
-            'delay_rate': st.column_config.ProgressColumn(
-                'Delayed 15+ min', format='%.1f%%', min_value=0.0, max_value=0.5),
-            'avg_delay': st.column_config.NumberColumn(
-                'Avg delay when late', format='%.0f min'),
-            'cancel_rate': st.column_config.NumberColumn(
-                'Cancelled', format='%.1f%%'),
-            'top_cause': st.column_config.TextColumn('Most common cause'),
-        })
+    st.markdown(f'<div class="section">{scope}</div>', unsafe_allow_html=True)
+    st.warning('Not enough flights at this airport to compare carriers '
+               'reliably. Try a larger airport, or set the month to Any.')
+    st.stop()
 
-top_right_cell = cols[1].container(
-    border=True, height='stretch'
-)
+# ---- the headline numbers -------------------------------------------------
+best, worst = summary.iloc[0], summary.iloc[-1]
+here_rate = sub.del15.sum() / sub.flights.sum()
+national = df.del15.sum() / df.flights.sum()
+gap = here_rate - national
 
-with top_right_cell:
-    fig1 = yearly_airline_delays(summary)
-    st.plotly_chart(fig1)
+st.markdown(f'<div class="section">{scope}</div>', unsafe_allow_html=True)
+k1, k2, k3, k4 = st.columns(4)
+with k1:
+    kpi(f'Best · {sort_by}', reading(col, best[col]),
+        best.carrier_label, tag='✓ most reliable', tone='good')
+with k2:
+    kpi(f'Worst · {sort_by}', reading(col, worst[col]),
+        worst.carrier_label, tag='△ least reliable', tone='bad')
+with k3:
+    near = abs(gap) <= 0.0005
+    kpi('Delayed 15+ min', f'{here_rate:.1%}',
+        'All carriers at this airport',
+        tag=('at the national rate' if near else
+             f'{abs(gap) * 100:.1f} pts {"above" if gap > 0 else "below"} national'),
+        tone='bad' if gap > 0 and not near else 'good')
+with k4:
+    kpi('Arrivals compared', f'{sub.flights.sum():,.0f}',
+        f'{len(summary)} carriers over the floor of {floor:,}')
 
-mid_right_cell_1 = cols[1].container(
-    border=True, height='stretch'
-)
+# ---- charts ---------------------------------------------------------------
+left, right = st.columns([5, 4])
 
-# ---- fleet-wide charts -----------------------------------------------------
-# These read the parquet directly, so they cover all airports regardless of the
-# filters above.
+with left:
+    st.markdown('<div class="section">Delay rate by airline</div>',
+                unsafe_allow_html=True)
+    st.plotly_chart(plot_delay_rates(summary, MODE),
+                    width='stretch', config={'displayModeBar': False})
 
-with mid_right_cell_1:
-    st.subheader("Why are flights delayed?")
-    st.caption('General performance across airlines')
+with right:
+    st.markdown('<div class="section">Delays over time · top 5 here</div>',
+                unsafe_allow_html=True)
+    st.plotly_chart(yearly_airline_delays(summary, MODE),
+                    width='stretch', config={'displayModeBar': False})
 
-    if month == "Any":
-        cause_data = filter_flights(
-            df,
-            airport,
-            month=None
-        )
-    else:
-        cause_data = filter_flights(
-            df,
-            airport,
-            month_number(month),
-            include_regional=show_regional
-        )
+    st.markdown('<div class="section">Why flights are delayed</div>',
+                unsafe_allow_html=True)
+    st.plotly_chart(plot_delay_causes(cause_shares(summary), MODE),
+                    width='stretch', config={'displayModeBar': False})
 
-    cause_summary = summarize(cause_data)
+# ---- the table view -------------------------------------------------------
+# Three light-mode series colours sit under 3:1 on the surface, so the palette
+# carries a relief obligation: the exact numbers stay available as text.
+st.markdown('<div class="section">Every carrier, ranked</div>',
+            unsafe_allow_html=True)
+st.dataframe(
+    summary[['carrier_label', 'carrier_kind', 'flights', 'delay_rate',
+             'avg_delay', 'cancel_rate', 'top_cause']],
+    hide_index=True,
+    width='stretch',
+    column_config={
+        'carrier_label': st.column_config.TextColumn('Airline', width='large'),
+        'carrier_kind': st.column_config.TextColumn('Type'),
+        'flights': st.column_config.NumberColumn('Arrivals', format='%d'),
+        'delay_rate': st.column_config.ProgressColumn(
+            'Delayed 15+ min', format='percent', min_value=0.0, max_value=0.5),
+        'avg_delay': st.column_config.NumberColumn(
+            'Avg delay when late', format='%.0f min'),
+        'cancel_rate': st.column_config.NumberColumn(
+            'Cancelled', format='percent'),
+        'top_cause': st.column_config.TextColumn('Most common cause'),
+    })
 
-    if not cause_summary.empty:
-        cause_shares_df = cause_shares(cause_summary)
-        fig_causes = plot_delay_causes(cause_shares_df)
-        st.plotly_chart(fig_causes, width="stretch")
-    else:
-        st.info("No delay-cause data available for this selection.")
-
-mid_left_cell_2 = cols[1].container(
-    border=True, height='stretch'
-)
-
-with mid_left_cell_2:
-    st.plotly_chart(month_delay_heatmap(summary))
+st.markdown(
+    '<p class="legend-note">Monthly totals, so this says nothing about day of '
+    'week or time of day. Arrivals only, by airport rather than by route. '
+    'Airline–airport pairs below the flight floor are hidden, because a handful '
+    'of flights produces an unstable rate.</p>',
+    unsafe_allow_html=True)

@@ -1,0 +1,29 @@
+# Page chrome. The chart palette lives in packages/theme.py; these are the same
+# surfaces and ink it was validated against, so Streamlit's own widgets match
+# the charts instead of fighting them.
+#
+# No `base` is set on purpose: the viewer's own light/dark choice wins, and
+# packages/theme.current_mode() reads it back so the charts follow suit. The
+# dark values below are selected steps for the dark surface, not a flip of the
+# light ones.
+
+[theme]
+primaryColor = "#2a78d6"
+backgroundColor = "#f9f9f7"
+secondaryBackgroundColor = "#fcfcfb"
+textColor = "#0b0b0b"
+borderColor = "#e1e0d9"
+dataframeBorderColor = "#e1e0d9"
+font = "sans serif"
+baseRadius = "0.8rem"
+
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#0d0d0d"
+secondaryBackgroundColor = "#1a1a19"
+textColor = "#ffffff"
+borderColor = "#2c2c2a"
+dataframeBorderColor = "#2c2c2a"
+
+[server]
+headless = true
