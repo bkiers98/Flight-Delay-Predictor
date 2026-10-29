@@ -7,6 +7,7 @@ layout only. Run with:  streamlit run app.py
 """
 import pandas as pd
 import streamlit as st
+from packages.airport_map import airport_delay_map
 
 from carriers import MONTHS
 from packages import theme
@@ -182,6 +183,35 @@ with tab3:
     with left:
         st.plotly_chart(month_delay_heatmap(summary),
                                 width='stretch', config={'displayModeBar': False})
+        
+# ---- Interactive airport delay map ----------------------------------------
+    with right:
+      st.markdown(
+          '<div class="section">Explore flight delays across U.S. airports</div>',
+          unsafe_allow_html=True
+      )
+
+      st.caption(
+          "Explore historical flight-delay rates across U.S. airports. "
+          "Larger circles represent more flights, while colors indicate delay rates."
+      )
+
+      @st.cache_data
+      def load_airport_coordinates():
+          return pd.read_csv(
+              "airport_coordinates.csv",
+              engine="python"
+          )
+
+      airport_locations = load_airport_coordinates()
+
+      fig_map = airport_delay_map(df, airport_locations)
+
+      st.plotly_chart(
+          fig_map,
+          width="stretch",
+          config={"displayModeBar": False}
+      )
 
 with tab4:
     st.markdown("""
