@@ -11,7 +11,7 @@ import streamlit as st
 from carriers import MONTHS
 from packages import theme
 from packages.plot_data import (plot_delay_causes, plot_delay_rates,
-                                yearly_airline_delays)
+                                yearly_airline_delays, month_delay_heatmap)
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
                            filter_flights, month_number, rank, summarize)
 
@@ -116,52 +116,76 @@ with k4:
     kpi('Arrivals compared', f'{sub.flights.sum():,.0f}',
         f'{len(summary)} carriers over the floor of {floor:,}')
 
+tab1, tab2, tab3, tab4 = st.tabs(['Detail Charts', 'Table', 'Background Charts', 'Documentation'])
+
 # ---- charts ---------------------------------------------------------------
-left, right = st.columns([5, 4])
+with tab1:
+# Visualizations related to the predictive model exist here
 
-with left:
-    st.markdown('<div class="section">Delay rate by airline</div>',
-                unsafe_allow_html=True)
-    st.plotly_chart(plot_delay_rates(summary, MODE),
-                    width='stretch', config={'displayModeBar': False})
+    left, right = st.columns([5, 4])
 
-with right:
-    st.markdown('<div class="section">Delays over time · top 5 here</div>',
-                unsafe_allow_html=True)
-    st.plotly_chart(yearly_airline_delays(summary, MODE),
-                    width='stretch', config={'displayModeBar': False})
+    with left:
+        st.markdown('<div class="section">Delay rate by airline</div>',
+                    unsafe_allow_html=True)
+        st.plotly_chart(plot_delay_rates(summary, MODE),
+                        width='stretch', config={'displayModeBar': False})
 
-    st.markdown('<div class="section">Why flights are delayed</div>',
-                unsafe_allow_html=True)
-    st.plotly_chart(plot_delay_causes(cause_shares(summary), MODE),
-                    width='stretch', config={'displayModeBar': False})
+    with right:
+        st.markdown('<div class="section">Delays over time · top 5 here</div>',
+                    unsafe_allow_html=True)
+        st.plotly_chart(yearly_airline_delays(summary, MODE),
+                        width='stretch', config={'displayModeBar': False})
+
+        st.markdown('<div class="section">Why flights are delayed</div>',
+                    unsafe_allow_html=True)
+        st.plotly_chart(plot_delay_causes(cause_shares(summary), MODE),
+                        width='stretch', config={'displayModeBar': False})
 
 # ---- the table view -------------------------------------------------------
+with tab2:
+#The tabular output from the predictive model exists here
+
 # Three light-mode series colours sit under 3:1 on the surface, so the palette
 # carries a relief obligation: the exact numbers stay available as text.
-st.markdown('<div class="section">Every carrier, ranked</div>',
-            unsafe_allow_html=True)
-st.dataframe(
-    summary[['carrier_label', 'carrier_kind', 'flights', 'delay_rate',
-             'avg_delay', 'cancel_rate', 'top_cause']],
-    hide_index=True,
-    width='stretch',
-    column_config={
-        'carrier_label': st.column_config.TextColumn('Airline', width='large'),
-        'carrier_kind': st.column_config.TextColumn('Type'),
-        'flights': st.column_config.NumberColumn('Arrivals', format='%d'),
-        'delay_rate': st.column_config.ProgressColumn(
-            'Delayed 15+ min', format='percent', min_value=0.0, max_value=0.5),
-        'avg_delay': st.column_config.NumberColumn(
-            'Avg delay when late', format='%.0f min'),
-        'cancel_rate': st.column_config.NumberColumn(
-            'Cancelled', format='percent'),
-        'top_cause': st.column_config.TextColumn('Most common cause'),
-    })
+    st.markdown('<div class="section">Every carrier, ranked</div>',
+                unsafe_allow_html=True)
+    st.dataframe(
+        summary[['carrier_label', 'carrier_kind', 'flights', 'delay_rate',
+                'avg_delay', 'cancel_rate', 'top_cause']],
+        hide_index=True,
+        width='stretch',
+        column_config={
+            'carrier_label': st.column_config.TextColumn('Airline', width='large'),
+            'carrier_kind': st.column_config.TextColumn('Type'),
+            'flights': st.column_config.NumberColumn('Arrivals', format='%d'),
+            'delay_rate': st.column_config.ProgressColumn(
+                'Delayed 15+ min', format='percent', min_value=0.0, max_value=0.5),
+            'avg_delay': st.column_config.NumberColumn(
+                'Avg delay when late', format='%.0f min'),
+            'cancel_rate': st.column_config.NumberColumn(
+                'Cancelled', format='percent'),
+            'top_cause': st.column_config.TextColumn('Most common cause'),
+        })
 
-st.markdown(
-    '<p class="legend-note">Monthly totals, so this says nothing about day of '
-    'week or time of day. Arrivals only, by airport rather than by route. '
-    'Airline–airport pairs below the flight floor are hidden, because a handful '
-    'of flights produces an unstable rate.</p>',
-    unsafe_allow_html=True)
+    st.markdown(
+        '<p class="legend-note">Monthly totals, so this says nothing about day of '
+        'week or time of day. Arrivals only, by airport rather than by route. '
+        'Airline–airport pairs below the flight floor are hidden, because a handful '
+        'of flights produces an unstable rate.</p>',
+        unsafe_allow_html=True)
+
+with tab3:
+#Visualizations or other information relating to the DataFrame as a whole exist here
+
+    left, right = st.columns(2)
+
+    with left:
+        st.plotly_chart(month_delay_heatmap(summary),
+                                width='stretch', config={'displayModeBar': False})
+
+with tab4:
+# Documentation for the dataset exists here, maybe information about how we
+# arrived at our recommendation as well?
+
+    st.markdown('<div class="section">Documentation coming soon...</div>',
+                unsafe_allow_html=True)
