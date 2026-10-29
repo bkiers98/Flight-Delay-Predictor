@@ -11,6 +11,7 @@ editing:
 """
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 
 from packages import theme
 
@@ -156,4 +157,16 @@ def yearly_airline_delays(summary, mode='light', top_n=5):
     fig.update_yaxes(showgrid=True, gridcolor=p['grid'], title=None,
                      tickformat=',.0f')
     fig.update_layout(hovermode='x unified', margin=dict(r=20, t=52, b=8))
+    return fig
+
+
+def month_delay_heatmap(summary):
+    # This is a px figure for now, and has not been styled with the theme yet
+    df = df_delays.copy()
+    df['weather_ratio'] = df['weather_ct'] / df['del15']
+    fig = px.density_heatmap(df, x='month',
+                             y='year',
+                             z='weather_ratio',
+                             histfunc='avg',
+                             color_continuous_scale='cividis')
     return fig
