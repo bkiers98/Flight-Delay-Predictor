@@ -182,7 +182,10 @@ st.caption(
 
 @st.cache_data
 def load_airport_coordinates():
-    return pd.read_csv("airport_coordinates.csv")
+    return pd.read_csv(
+        "airport_coordinates.csv",
+        engine="python"
+    )
 
 airport_locations = load_airport_coordinates()
 
