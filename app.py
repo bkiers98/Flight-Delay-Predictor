@@ -7,6 +7,7 @@ layout only. Run with:  streamlit run app.py
 """
 import pandas as pd
 import streamlit as st
+from packages.airport_map import airport_delay_map
 
 from carriers import MONTHS
 from packages import theme
@@ -165,3 +166,30 @@ st.markdown(
     'Airline–airport pairs below the flight floor are hidden, because a handful '
     'of flights produces an unstable rate.</p>',
     unsafe_allow_html=True)
+
+
+# ---- Interactive airport delay map ----------------------------------------
+
+st.markdown(
+    '<div class="section">Explore flight delays across U.S. airports</div>',
+    unsafe_allow_html=True
+)
+
+st.caption(
+    "Explore historical flight-delay rates across U.S. airports. "
+    "Larger circles represent more flights, while colors indicate delay rates."
+)
+
+@st.cache_data
+def load_airport_coordinates():
+    return pd.read_csv("airport_coordinates.csv")
+
+airport_locations = load_airport_coordinates()
+
+fig_map = airport_delay_map(df, airport_locations)
+
+st.plotly_chart(
+    fig_map,
+    width="stretch",
+    config={"displayModeBar": False}
+)
