@@ -184,8 +184,27 @@ with tab3:
                                 width='stretch', config={'displayModeBar': False})
 
 with tab4:
-# Documentation for the dataset exists here, maybe information about how we
-# arrived at our recommendation as well?
+    st.markdown("""
+    ## Dataset & Methodology
 
-    st.markdown('<div class="section">Documentation coming soon...</div>',
-                unsafe_allow_html=True)
+    This dashboard uses historical airline delay and cancellation data
+    from the Bureau of Transportation Statistics (BTS). The data is
+    cleaned and aggregated by airport, airline, and month before being
+    used in the application.
+
+    ### Understanding the Dashboard
+
+    KPI cards provide a quick overview of airline performance,
+    including the best and worst delay rates, overall delayed flights,
+    and total arrivals compared.
+
+    ### How Recommendations Work
+
+    Airlines are ranked using delay rate, average delay, or cancellation
+    rate. Lower values indicate better performance.
+
+    ### Important Notes
+
+    Rankings reflect historical airline performance and should not
+    be considered a guarantee of future flight reliability.
+    """)
