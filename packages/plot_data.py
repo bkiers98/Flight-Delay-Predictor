@@ -160,13 +160,31 @@ def yearly_airline_delays(summary, mode='light', top_n=5):
     return fig
 
 
-def month_delay_heatmap(summary):
-    # This is a px figure for now, and has not been styled with the theme yet
+def month_delay_heatmap(mode='light'):
+    colorscale = theme.sequential(mode)
+
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     df = df_delays.copy()
     df['weather_ratio'] = df['weather_ct'] / df['del15']
-    fig = px.density_heatmap(df, x='month',
-                             y='year',
-                             z='weather_ratio',
-                             histfunc='avg',
-                             color_continuous_scale='cividis')
+    fig = go.Figure(go.Histogram2d(
+        x=df['month'],
+        y=df['year'],
+        z=df['weather_ratio'],
+        histfunc='avg',
+        colorscale=colorscale
+    ), layout=go.Layout(
+        hovermode='x unified',
+        xaxis=dict(
+            title_text='Month',
+            unifiedhovertitle=dict(
+                text='<b>%{x}</b>'
+            )
+        ),
+        yaxis=dict(
+            title_text='Year'
+        )
+    ))
+    theme.apply_layout(fig, mode, height=300)
+
     return fig
