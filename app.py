@@ -220,12 +220,19 @@ with tab3:
 
         st.markdown('<div class="section">Weather for this airport</div>',
                             unsafe_allow_html=True)
-        airport = airport_locations.loc[
-            airport_locations['name'] == 'Indianapolis International Airport'
+        airport_weather = airport_locations.loc[
+            airport_locations['local_code'] == airport
         ].reset_index()
-        current_weather = get_weather(airport)
-        st.markdown(f'It is {current_weather['temperature']}°F \
-                    at the Indianapolis International Airport.')
+        try:
+            current_weather = get_weather(airport_weather)
+            st.markdown(f'It is {current_weather['temperature']}°F \
+            at the {airport} — {labels[airport]}')
+        except KeyError:
+            st.markdown(f'No weather information available for \
+                        {airport} — {labels[airport]}')
+            
+        st.page_link('https://open-meteo.com/',
+                         label='Weather Data by Open-Meteo.com')
 
 with tab4:
     st.markdown("""
