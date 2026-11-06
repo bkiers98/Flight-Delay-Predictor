@@ -15,6 +15,7 @@ from packages.plot_data import (plot_delay_causes, plot_delay_rates,
                                 yearly_airline_delays, month_delay_heatmap)
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
                            filter_flights, month_number, rank, summarize)
+from weather import get_weather
 
 DATA = 'delays_by_airport_month.parquet'
 
@@ -181,37 +182,57 @@ with tab3:
     left, right = st.columns(2)
 
     with left:
-        st.plotly_chart(month_delay_heatmap(summary),
+        st.markdown(
+            '<div class="section">Weather-related delays by month and year</div>',
+            unsafe_allow_html=True
+        )
+        st.plotly_chart(month_delay_heatmap(),
                                 width='stretch', config={'displayModeBar': False})
         
 # ---- Interactive airport delay map ----------------------------------------
     with right:
-      st.markdown(
-          '<div class="section">Explore flight delays across U.S. airports</div>',
-          unsafe_allow_html=True
-      )
+        st.markdown(
+            '<div class="section">Explore flight delays across U.S. airports</div>',
+            unsafe_allow_html=True
+        )
 
-      st.caption(
-          "Explore historical flight-delay rates across U.S. airports. "
-          "Larger circles represent more flights, while colors indicate delay rates."
-      )
+        st.caption(
+            "Explore historical flight-delay rates across U.S. airports. "
+            "Larger circles represent more flights, while colors indicate delay rates."
+        )
 
-      @st.cache_data
-      def load_airport_coordinates():
-          return pd.read_csv(
-              "airport_coordinates.csv",
-              engine="python"
-          )
+        @st.cache_data
+        def load_airport_coordinates():
+            return pd.read_csv(
+                "airport_coordinates.csv",
+                engine="python"
+            )
 
-      airport_locations = load_airport_coordinates()
+        airport_locations = load_airport_coordinates()
 
-      fig_map = airport_delay_map(df, airport_locations)
+        fig_map = airport_delay_map(df, airport_locations)
 
-      st.plotly_chart(
-          fig_map,
-          width="stretch",
-          config={"displayModeBar": False}
-      )
+        st.plotly_chart(
+            fig_map,
+            width="stretch",
+            config={"displayModeBar": False}
+        )
+
+        st.markdown('<div class="section">Weather for this airport</div>',
+                            unsafe_allow_html=True)
+        airport_weather = airport_locations.loc[
+            airport_locations['local_code'] == airport
+        ].reset_index()
+        try:
+            current_weather = get_weather(airport_weather)
+            st.markdown(f'It is {current_weather['temperature']}°F \
+            at the {airport} — {labels[airport]}')
+        except KeyError:
+            st.markdown(f'No weather information available for \
+                        {airport} — {labels[airport]}')
+            
+        st.page_link('https://open-meteo.com/',
+                         label='Weather Data by Open-Meteo.com')
 
 with tab4:
     st.markdown("""
