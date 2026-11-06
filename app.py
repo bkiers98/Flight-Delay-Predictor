@@ -7,6 +7,7 @@ layout only. Run with:  streamlit run app.py
 """
 import pandas as pd
 import streamlit as st
+from packages.airport_map import airport_delay_map
 
 from carriers import MONTHS
 from packages import theme
@@ -14,6 +15,7 @@ from packages.plot_data import (plot_delay_causes, plot_delay_rates,
                                 yearly_airline_delays, month_delay_heatmap)
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
                            filter_flights, month_number, rank, summarize)
+from weather import get_weather
 
 DATA = 'delays_by_airport_month.parquet'
 
@@ -180,12 +182,80 @@ with tab3:
     left, right = st.columns(2)
 
     with left:
-        st.plotly_chart(month_delay_heatmap(summary),
+        st.markdown(
+            '<div class="section">Weather-related delays by month and year</div>',
+            unsafe_allow_html=True
+        )
+        st.plotly_chart(month_delay_heatmap(),
                                 width='stretch', config={'displayModeBar': False})
+        
+# ---- Interactive airport delay map ----------------------------------------
+    with right:
+        st.markdown(
+            '<div class="section">Explore flight delays across U.S. airports</div>',
+            unsafe_allow_html=True
+        )
+
+        st.caption(
+            "Explore historical flight-delay rates across U.S. airports. "
+            "Larger circles represent more flights, while colors indicate delay rates."
+        )
+
+        @st.cache_data
+        def load_airport_coordinates():
+            return pd.read_csv(
+                "airport_coordinates.csv",
+                engine="python"
+            )
+
+        airport_locations = load_airport_coordinates()
+
+        fig_map = airport_delay_map(df, airport_locations)
+
+        st.plotly_chart(
+            fig_map,
+            width="stretch",
+            config={"displayModeBar": False}
+        )
+
+        st.markdown('<div class="section">Weather for this airport</div>',
+                            unsafe_allow_html=True)
+        airport_weather = airport_locations.loc[
+            airport_locations['local_code'] == airport
+        ].reset_index()
+        try:
+            current_weather = get_weather(airport_weather)
+            st.markdown(f'It is {current_weather['temperature']}°F \
+            at the {airport} — {labels[airport]}')
+        except KeyError:
+            st.markdown(f'No weather information available for \
+                        {airport} — {labels[airport]}')
+            
+        st.page_link('https://open-meteo.com/',
+                         label='Weather Data by Open-Meteo.com')
 
 with tab4:
-# Documentation for the dataset exists here, maybe information about how we
-# arrived at our recommendation as well?
+    st.markdown("""
+    ## Dataset & Methodology
 
-    st.markdown('<div class="section">Documentation coming soon...</div>',
-                unsafe_allow_html=True)
+    This dashboard uses historical airline delay and cancellation data
+    from the Bureau of Transportation Statistics (BTS). The data is
+    cleaned and aggregated by airport, airline, and month before being
+    used in the application.
+
+    ### Understanding the Dashboard
+
+    KPI cards provide a quick overview of airline performance,
+    including the best and worst delay rates, overall delayed flights,
+    and total arrivals compared.
+
+    ### How Recommendations Work
+
+    Airlines are ranked using delay rate, average delay, or cancellation
+    rate. Lower values indicate better performance.
+
+    ### Important Notes
+
+    Rankings reflect historical airline performance and should not
+    be considered a guarantee of future flight reliability.
+    """)
