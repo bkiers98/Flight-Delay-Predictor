@@ -220,11 +220,19 @@ with tab3:
 
         st.markdown('<div class="section">Weather for this airport</div>',
                             unsafe_allow_html=True)
+
+        @st.cache_data(ttl=600)
+        def load_current_weather(airport='IND'):
+            current = get_weather(airport)
+
+            return current
+        
         airport_weather = airport_locations.loc[
             airport_locations['local_code'] == airport
-        ].reset_index()
+            ].reset_index()
+        
         try:
-            current_weather = get_weather(airport_weather)
+            current_weather = load_current_weather(airport_weather)
         except KeyError:
             st.markdown(f'No weather information available for \
                         {airport} — {labels[airport]}')
