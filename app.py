@@ -204,7 +204,7 @@ with tab3:
         @st.cache_data
         def load_airport_coordinates():
             return pd.read_csv(
-                "airport_coordinates.csv",
+                'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aJeOI9UMWprBqFsggcL-SCdwcm11Zb9z9HdBYvjatMdY6Y_pMgE91uwqrSEEclX7cGHgBae1iuX8/pub?gid=585761396&single=true&output=csv',
                 engine="python"
             )
 
