@@ -31,6 +31,19 @@ st.markdown(theme.css(MODE), unsafe_allow_html=True)
 def load():
     return pd.read_parquet(DATA)
 
+@st.cache_data
+def load_airport_coordinates():
+    return pd.read_csv(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aJeOI9UMWprBqFsggcL-SCdwcm11Zb9z9HdBYvjatMdY6Y_pMgE91uwqrSEEclX7cGHgBae1iuX8/pub?gid=585761396&single=true&output=csv',
+        engine="python"
+    )
+
+@st.cache_data(ttl=600)
+def load_current_weather(airport='IND'):
+    current = get_weather(airport)
+
+    return current
+
 
 def kpi(label, value, sub='', tag=None, tone='good'):
     """A stat tile. When the story is one number, the number is the chart."""
@@ -52,6 +65,7 @@ def reading(col, value):
 
 
 df = load()
+airport_locations = load_airport_coordinates()
 
 st.markdown('# Flight Delay Predictor')
 st.markdown(
@@ -179,9 +193,34 @@ with tab2:
 with tab3:
 #Visualizations or other information relating to the DataFrame as a whole exist here
 
-    left, right = st.columns(2)
+    left, right = st.columns([2, 3])
 
     with left:
+        airport_weather = airport_locations.loc[
+            airport_locations['local_code'] == airport
+            ].reset_index()
+        
+        try:
+            current_weather = load_current_weather(airport_weather)
+        except KeyError:
+            current_weather = False
+        if current_weather:
+            weather_label = f'Weather for {labels[airport]}'
+            temperature = f'{current_weather['temperature']}°F'
+            weather_code = f'{current_weather['weather_code']}'
+        else:
+            weather_label = f'No weather data available for {labels[airport]}'
+            temperature, weather_code = '--'
+
+        st.markdown(
+            f'<div class="kpi"><div class="kpi-label">{weather_label}</div>'
+            f'<div class="kpi-value">{temperature}</div>'
+            f'<div class="kpi-sub">{weather_code}</div>',
+            unsafe_allow_html=True)
+        st.page_link('https://open-meteo.com/',
+                    label='Weather Data by Open-Meteo.com')
+        
+
         st.markdown(
             '<div class="section">Weather-related delays by month and year</div>',
             unsafe_allow_html=True
@@ -201,15 +240,6 @@ with tab3:
             "Larger circles represent more flights, while colors indicate delay rates."
         )
 
-        @st.cache_data
-        def load_airport_coordinates():
-            return pd.read_csv(
-                "airport_coordinates.csv",
-                engine="python"
-            )
-
-        airport_locations = load_airport_coordinates()
-
         fig_map = airport_delay_map(df, airport_locations)
 
         st.plotly_chart(
@@ -220,19 +250,6 @@ with tab3:
 
         st.markdown('<div class="section">Weather for this airport</div>',
                             unsafe_allow_html=True)
-        airport_weather = airport_locations.loc[
-            airport_locations['local_code'] == airport
-        ].reset_index()
-        try:
-            current_weather = get_weather(airport_weather)
-            st.markdown(f'It is {current_weather['temperature']}°F \
-            at the {airport} — {labels[airport]}')
-        except KeyError:
-            st.markdown(f'No weather information available for \
-                        {airport} — {labels[airport]}')
-            
-        st.page_link('https://open-meteo.com/',
-                         label='Weather Data by Open-Meteo.com')
 
 with tab4:
     st.markdown("""
